@@ -11,6 +11,9 @@ const keys = ["unknown", "block", "element", "modifier", "value"];
  * Abstracts the 4 parts of a BEM classname for comparison and convenient modificationn
  */
 class BemItem {
+  constructor(obj) {
+    Object.assign(this, obj);
+  }
   isEqual(other) {
     return (
       this.block == other.block &&
@@ -28,20 +31,24 @@ class BemItem {
     });
   }
   toString() {
-    return this.block + this.element + this.modifier + this.value;
+    if (this.unknown) {
+      return this.unknown;
+    } else {
+      return this.block + this.element + this.modifier + this.value;
+    }
   }
   static fromClassName(className) {
     const partsRegex =
       /^(?<block>[a-zA-Z0-9\\-]+)(?<element>__[a-zA-Z0-9\\-]*)?(?<modifier>_[a-zA-Z0-9\\-]*)?(?<value>_[a-zA-Z0-9\\-]*)?$/;
     const match = className.match(partsRegex);
     if (match === null) {
-      return {
+      return new BemItem({
         block: "",
         element: "",
         modifier: "",
         value: "",
         unknown: className,
-      };
+      });
     }
     const parts = match.groups;
     const plainParts = Object.assign(new BemItem(), parts); // Make it serializable
@@ -49,6 +56,17 @@ class BemItem {
       plainParts[key] = plainParts[key] || "";
     });
     return plainParts;
+  }
+}
+
+function lintForInvalidBemNames(nodes) {
+  for (let node of nodes) {
+    const bemList = Array.from(node.classList).map(BemItem.fromClassName);
+    for (let bemItem of bemList) {
+      if (bemItem.unknown) {
+        console.error(`Class is not a valid BEM name: ${bemItem.toString()}`);
+      }
+    }
   }
 }
 
@@ -131,14 +149,19 @@ function App() {
     const parser = new DOMParser();
     const htmlDoc = parser.parseFromString(html, "text/html");
     const nodesWithClasses = htmlDoc.querySelectorAll("[class]");
+    lintForInvalidBemNames(nodesWithClasses);
     lintForModifierWithoutBase(nodesWithClasses);
     lintForElementsOutsideBlocks(nodesWithClasses);
   }
   return (
     <div className="App">
-      Paste your html here:
-      <textarea ref={htmlInputRef}></textarea>
-      <button onClick={handleClickLint}>Lint!</button>
+      <div>
+        <div>Paste your html here:</div>
+        <textarea ref={htmlInputRef}></textarea>
+      </div>
+      <div>
+        <button onClick={handleClickLint}>Lint!</button>
+      </div>
     </div>
   );
 }
