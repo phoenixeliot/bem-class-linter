@@ -1,6 +1,8 @@
 import "./App.css";
 import React from "react";
 import _ from "lodash";
+import project1Classes from "./project1-classes.json";
+import project2Classes from "./project2-classes.json";
 
 const bemPartsRegex =
   /^(?<block>[a-zA-Z0-9\\-]+)(?<element>__[a-zA-Z0-9\\-]*)?(?<modifier>_[a-zA-Z0-9\\-]*)?(?<value>_[a-zA-Z0-9\\-]*)?$/;
@@ -142,6 +144,24 @@ function lintForElementsOutsideBlocks(nodes) {
   }
 }
 
+function compareProjectClassLists(inputClasses, projectClasses) {
+  for (let inputClass of new Set(inputClasses)) {
+    // use a set to avoid duplicate errors
+    if (!projectClasses.includes(inputClass)) {
+      console.error(
+        `Class found in input code is not a class used in this project: ${inputClass}`
+      );
+    }
+  }
+  for (let projectClass of projectClasses) {
+    if (!inputClasses.includes(projectClass)) {
+      console.error(
+        `Class from project brief is not used in the input code: ${projectClass}`
+      );
+    }
+  }
+}
+
 function App() {
   const htmlInputRef = React.useRef();
   function handleClickLint() {
@@ -149,9 +169,27 @@ function App() {
     const parser = new DOMParser();
     const htmlDoc = parser.parseFromString(html, "text/html");
     const nodesWithClasses = htmlDoc.querySelectorAll("[class]");
+    console.log(
+      "%c Linting for BEM rule violations...",
+      "color: green; font-weight: bold"
+    );
     lintForInvalidBemNames(nodesWithClasses);
     lintForModifierWithoutBase(nodesWithClasses);
     lintForElementsOutsideBlocks(nodesWithClasses);
+  }
+  function handleCheckProjectClick(projectClasses) {
+    const html = htmlInputRef.current.value;
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(html, "text/html");
+    const nodesWithClasses = htmlDoc.querySelectorAll("[class]");
+    const classes = Array.from(nodesWithClasses).reduce((list, node) => {
+      return list.concat(Array.from(node.classList));
+    }, []);
+    console.log(
+      "%c Checking classlist against project...",
+      "color: green; font-weight: bold"
+    );
+    compareProjectClassLists(classes, projectClasses);
   }
   return (
     <div className="App">
@@ -161,6 +199,15 @@ function App() {
       </div>
       <div>
         <button onClick={handleClickLint}>Lint!</button>
+      </div>
+      <div>
+        If relevant: Check your class list against
+        <button onClick={() => handleCheckProjectClick(project1Classes)}>
+          Project 1
+        </button>
+        <button onClick={() => handleCheckProjectClick(project2Classes)}>
+          Project 2
+        </button>
       </div>
     </div>
   );
