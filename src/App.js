@@ -199,6 +199,7 @@ function App() {
       <div>
         <button onClick={handleClickLint}>Lint!</button>
       </div>
+      {/*
       <br />
       <div>If relevant: Check your class list against...</div>{" "}
       <div>
@@ -209,6 +210,7 @@ function App() {
           Project 2
         </button>
       </div>
+      */}
       <br />
       <div>
         Because this is a <i>very</i> minimal viable product, the results will
