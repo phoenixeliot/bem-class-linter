@@ -1,6 +1,5 @@
 import "./App.css";
 import React from "react";
-import _ from "lodash";
 import project1Classes from "./project1-classes.json";
 import project2Classes from "./project2-classes.json";
 
@@ -18,10 +17,10 @@ class BemItem {
   }
   isEqual(other) {
     return (
-      this.block == other.block &&
-      this.element == other.element &&
-      this.modifier == other.modifier &&
-      this.value == other.value
+      this.block === other.block &&
+      this.element === other.element &&
+      this.modifier === other.modifier &&
+      this.value === other.value
     );
   }
   getUnmodifiedItem() {
@@ -200,14 +199,20 @@ function App() {
       <div>
         <button onClick={handleClickLint}>Lint!</button>
       </div>
+      <br />
+      <div>If relevant: Check your class list against...</div>{" "}
       <div>
-        If relevant: Check your class list against
         <button onClick={() => handleCheckProjectClick(project1Classes)}>
           Project 1
         </button>
         <button onClick={() => handleCheckProjectClick(project2Classes)}>
           Project 2
         </button>
+      </div>
+      <br />
+      <div>
+        Because this is a <i>very</i> minimal viable product, the results will
+        be printed as errors in the console. Open up those dev tools!
       </div>
     </div>
   );
