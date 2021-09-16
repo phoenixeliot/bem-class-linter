@@ -3,9 +3,6 @@ import React from "react";
 import project1Classes from "./project1-classes.json";
 import project2Classes from "./project2-classes.json";
 
-const bemPartsRegex =
-  /^(?<block>[a-zA-Z0-9\\-]+)(?<element>__[a-zA-Z0-9\\-]*)?(?<modifier>_[a-zA-Z0-9\\-]*)?(?<value>_[a-zA-Z0-9\\-]*)?$/;
-
 const keys = ["unknown", "block", "element", "modifier", "value"];
 
 /**
