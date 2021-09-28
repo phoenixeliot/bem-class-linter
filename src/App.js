@@ -24,9 +24,14 @@ class BemItem {
     return Object.assign(new BemItem(), this, { modifier: "", value: "" });
   }
   getBlock() {
-    return Object.assign(new BemItem(), this.getUnmodifiedItem(), {
+    return Object.assign(new BemItem(), this, {
       element: "",
+      modifier: "",
+      value: "",
     });
+  }
+  getWithoutValue() {
+    return Object.assign(new BemItem(), this, { value: "" });
   }
   toString() {
     if (this.unknown) {
@@ -35,17 +40,15 @@ class BemItem {
       return this.block + this.element + this.modifier + this.value;
     }
   }
-  static fromClassName(className) {
-    const partsRegex =
-      /^(?<block>[a-zA-Z0-9\\-]+)(?<element>__[a-zA-Z0-9\\-]*)?(?<modifier>_[a-zA-Z0-9\\-]*)?(?<value>_[a-zA-Z0-9\\-]*)?$/;
-    const match = className.match(partsRegex);
+  static fromStringWithPattern(string, partsRegex) {
+    const match = string.match(partsRegex);
     if (match === null) {
       return new BemItem({
         block: "",
         element: "",
         modifier: "",
         value: "",
-        unknown: className,
+        unknown: string,
       });
     }
     const parts = match.groups;
@@ -54,6 +57,20 @@ class BemItem {
       plainParts[key] = plainParts[key] || "";
     });
     return plainParts;
+  }
+  static fromClassName(className) {
+    const partsRegex =
+      /^(?<block>[a-zA-Z0-9\\-]+)(?<element>__[a-zA-Z0-9\\-]*)?(?<modifier>_[a-zA-Z0-9\\-]*)?(?<value>_[a-zA-Z0-9\\-]*)?$/;
+    return BemItem.fromStringWithPattern(className, partsRegex);
+  }
+  static fromFolderPath(path) {
+    const _parts = path.replace("./", "").split("/");
+    if (_parts[0] !== "blocks") {
+      console.error(`Path does not start with \`blocks\` folder: ${path}`);
+    }
+    const partsRegex =
+      /^(\.?\/)?blocks\/(?<block>[a-zA-Z0-9\\-]+)(\/(?<element>__[a-zA-Z0-9\\-]*))?(\/(?<modifier>_[a-zA-Z0-9\\-]*))?(\/(?<value>_[a-zA-Z0-9\\-]*))?$/;
+    return BemItem.fromStringWithPattern(path, partsRegex);
   }
 }
 
@@ -158,8 +175,47 @@ function compareProjectClassLists(inputClasses, projectClasses) {
   }
 }
 
+function lintFilePaths(filePaths) {
+  for (let fullPath of filePaths) {
+    const folderPath = fullPath
+      .replace(/^\.\//, "")
+      .split("/")
+      .slice(0, -1)
+      .join("/");
+    const folderBemItem = BemItem.fromFolderPath(folderPath);
+    const filename = fullPath
+      .split("/")
+      .slice(-1)[0]
+      .replace(/\.css$/, "");
+    const filenameBemItem = BemItem.fromClassName(filename);
+    if (!folderBemItem.isEqual(filenameBemItem.getWithoutValue())) {
+      const comparisonMessages = [];
+      if (folderBemItem.unknown) {
+        comparisonMessages.push(`Invalid BEM folder path: ${folderPath}`);
+      }
+      if (filenameBemItem.unknown) {
+        comparisonMessages.push(`Invalid BEM filename: ${filename}`);
+      }
+      for (let partName of ["block", "element", "modifier"]) {
+        if (folderBemItem[partName] !== filenameBemItem[partName]) {
+          comparisonMessages.push(
+            `${partName}: "${folderBemItem[partName]}" !== "${filenameBemItem[partName]}"`
+          );
+        }
+      }
+      console.error(
+        `Folder path and filename don't match (ignoring value): ${fullPath}\n\n${comparisonMessages.join(
+          "\n"
+        )}\n`,
+        { folderBemItem, filenameBemItem }
+      );
+    }
+  }
+}
+
 function App() {
   const htmlInputRef = React.useRef();
+  const filesInputRef = React.useRef();
   function handleClickLint() {
     const html = htmlInputRef.current.value;
     const parser = new DOMParser();
@@ -172,6 +228,7 @@ function App() {
     lintForInvalidBemNames(nodesWithClasses);
     lintForModifierWithoutBase(nodesWithClasses);
     lintForElementsOutsideBlocks(nodesWithClasses);
+    console.log("%c Done!", "color: green; font-weight: bold");
   }
   function handleCheckProjectClick(projectClasses) {
     const html = htmlInputRef.current.value;
@@ -187,31 +244,49 @@ function App() {
     );
     compareProjectClassLists(classes, projectClasses);
   }
+  function handleClickCheckFiles() {
+    const filePaths = filesInputRef.current.value.trim().split("\n");
+    console.log("%c Checking file paths...", "color: green; font-weight: bold");
+    lintFilePaths(filePaths);
+    console.log("%c Done!", "color: green; font-weight: bold");
+  }
   return (
     <div className="App">
-      <div>
+      <div className="input-block">
         <div>Paste your html here:</div>
-        <textarea ref={htmlInputRef}></textarea>
+        <textarea
+          className="input-block__textarea"
+          ref={htmlInputRef}
+        ></textarea>
+        <button onClick={handleClickLint}>Lint my HTML!</button>
+        {/* <br />
+        <div>If relevant: Check your class list against...</div>{" "}
+        <div>
+          <button onClick={() => handleCheckProjectClick(project1Classes)}>
+            Project 1
+          </button>
+          <button onClick={() => handleCheckProjectClick(project2Classes)}>
+            Project 2
+          </button>
+        </div> */}
       </div>
-      <div>
-        <button onClick={handleClickLint}>Lint!</button>
-      </div>
-      {/*
-      <br />
-      <div>If relevant: Check your class list against...</div>{" "}
-      <div>
-        <button onClick={() => handleCheckProjectClick(project1Classes)}>
-          Project 1
+      <div className="input-block">
+        <div>
+          Paste your output from <code>find ./blocks -type f</code> here:
+        </div>
+        <textarea
+          className="input-block__textarea"
+          ref={filesInputRef}
+        ></textarea>
+        <button onClick={handleClickCheckFiles}>
+          Check my file structure!
         </button>
-        <button onClick={() => handleCheckProjectClick(project2Classes)}>
-          Project 2
-        </button>
       </div>
-      */}
-      <br />
       <div>
         Because this is a <i>very</i> minimal viable product, the results will
         be printed as errors in the console. Open up those dev tools!
+        <br />
+        And remember that this will NOT catch 100% of BEM problems.
       </div>
     </div>
   );
