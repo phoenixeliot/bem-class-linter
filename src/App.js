@@ -281,6 +281,15 @@ function App() {
         <button onClick={handleClickCheckFiles}>
           Check my file structure!
         </button>
+        <br />
+        <p>
+          (If you're on windows, please try{" "}
+          <a href="https://superuser.com/questions/401495/equivalent-of-unix-find-command-on-windows">
+            one of these methods
+          </a>{" "}
+          and let me know what the equivalent command is, so I can add support
+          for it here)
+        </p>
       </div>
       <div>
         Because this is a <i>very</i> minimal viable product, the results will
