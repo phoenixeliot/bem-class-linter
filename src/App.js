@@ -187,6 +187,9 @@ function lintFilePaths(filePaths) {
       .split("/")
       .slice(-1)[0]
       .replace(/\.css$/, "");
+    if (filename === ".DS_Store") {
+      continue;
+    }
     const filenameBemItem = BemItem.fromClassName(filename);
     if (!folderBemItem.isEqual(filenameBemItem.getWithoutValue())) {
       const comparisonMessages = [];
